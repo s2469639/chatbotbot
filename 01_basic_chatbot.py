@@ -17,7 +17,8 @@ client = genai.Client(api_key=api_key)
 model_name = "gemini-3.8-flash"
 
 print("=" * 50)
-print("01. 기본 Gemini 챗봇 (종료하려면 'exit' 또는 'quit' 입력)")
+print(f"01. 기본 Gemini 챗봇 ({model_name})")
+print("종료하려면 'exit', 'quit', 또는 '종료'를 입력하세요.")
 print("=" * 50)
 
 while True:
@@ -29,19 +30,32 @@ while True:
             print("챗봇을 종료합니다.")
             break
 
-        # 01basic_readme.md 사양: 단일 턴 질의응답 (temperature=0.7)
-        response = client.models.generate_content(
+        print("AI: ", end="", flush=True)
+
+        # 스트리밍 방식(generate_content_stream)으로 실시간 출력
+        # Gemini 3.8 Flash는 thinking_config(level="low")로 빠른 응답 유도
+        response_stream = client.models.generate_content_stream(
             model=model_name,
             contents=user_input,
             config=types.GenerateContentConfig(
-                temperature=0.7,
+                thinking_config=types.ThinkingConfig(
+                    thinking_level="low"
+                )
             ),
         )
 
-        print(f"AI: {response.text}\n")
+        has_output = False
+        for chunk in response_stream:
+            if chunk.text:
+                print(chunk.text, end="", flush=True)
+                has_output = True
+
+        if not has_output:
+            print("(응답 내용이 없습니다.)", end="")
+        print("\n")
 
     except KeyboardInterrupt:
         print("\n챗봇을 종료합니다.")
         break
     except Exception as e:
-        print(f"오류가 발생했습니다: {e}\n")
+        print(f"\n오류가 발생했습니다: {e}\n")
